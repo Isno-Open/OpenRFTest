@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  temoins:
+    name: Les témoins sur poste
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: test/run.sh
+  firmware:
+    name: Compiler ${{ matrix.board }}
+    runs-on: ubuntu-latest
+    container: espressif/idf:v6.1
+    strategy:
+      matrix:
+        include:
+          - { board: isno-super,   target: esp32s3 }
+          - { board: m5-atom-lite, target: esp32 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: idf.py build
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh >/dev/null
+          idf.py -B build -DSDKCONFIG=build/sdkconfig -DIDF_TARGET=${{ matrix.target }} -DBOARD=${{ matrix.board }} build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openrftest-${{ matrix.board }}
+          path: build/openrftest.bin
