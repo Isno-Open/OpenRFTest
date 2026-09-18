@@ -61,7 +61,8 @@ main au launcher.
 `GET /api/state` rend l'état des radios en JSON. `POST /api/set` applique, dans l'ordre,
 les clefs présentes : `radio`, `freq_khz`, `chan`, `mod`, `baud`, `dev_hz`, `dbm`, `pa` ;
 le premier refus arrête et revient dans `message`. `POST /api/tx` et `POST /api/rx`
-prennent `{"on": true|false}`.
+prennent `{"on": true|false}`. `POST /api/selftest` lance l'auto-test et rend chaque
+vérification, `{radio, label, pass}`, avec le total ; la page a son bouton.
 
 ## Ce qui est vérifié sans matériel
 

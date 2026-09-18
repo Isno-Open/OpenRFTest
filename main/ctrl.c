@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const board_radio_t RADIOS[BOARD_RADIO_COUNT] = BOARD_RADIOS_INIT;
 static cc1101_state_t s_st[BOARD_RADIO_COUNT];
@@ -156,4 +158,38 @@ size_t ctrl_state_json(char *out, size_t sz)
     }
     n += snprintf(out + n, sz > n ? sz - n : 0, "]}");
     return n;
+}
+
+/* Attend que la MARCSTATE atteigne l'etat vise (calibration, PLL), au plus ms. */
+static uint8_t wait_marc(int r, uint8_t want, int ms)
+{
+    uint8_t m = cc1101_marcstate(r);
+    for (int i = 0; i < ms / 5 && m != want; i++) { vTaskDelay(pdMS_TO_TICKS(5)); m = cc1101_marcstate(r); }
+    return m;
+}
+
+int ctrl_selftest(ctrl_check_cb_t cb, void *arg)
+{
+    int fail = 0;
+#define CHECK(cond, label) do { bool _c = (cond); cb(RADIOS[r].band, label, _c, arg); if (!_c) fail++; } while (0)
+    for (int r = 0; r < BOARD_RADIO_COUNT; r++) {
+        s_cur = r;
+        uint8_t p, v;
+        CHECK(cc1101_present(r, &p, &v) && v != 0x00, "CC1101 present");
+        ctrl_tx(false);
+        CHECK(wait_marc(r, 0x01, 100) == 0x01, "repos, MARCSTATE 0x01");
+        ctrl_tx(true);
+        CHECK(wait_marc(r, 0x13, 200) == 0x13, "emission, MARCSTATE 0x13");
+        ctrl_tx(false);
+        ctrl_rx(true);
+        CHECK(wait_marc(r, 0x0D, 200) == 0x0D, "ecoute, MARCSTATE 0x0D");
+        int rssi = cc1101_rssi_dbm(r);
+        CHECK(rssi < 0 && rssi > -140, "RSSI lisible");
+        ctrl_rx(false);
+        CHECK(ctrl_set_freq_hz(100000u * 1000u) != NULL, "frequence hors plage refusee");
+        CHECK(ctrl_set_power(30) != NULL, "puissance au-dela du declare refusee");
+    }
+    s_cur = 0;
+    return fail;
+#undef CHECK
 }

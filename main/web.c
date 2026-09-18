@@ -86,6 +86,27 @@ static esp_err_t h_rx(httpd_req_t *r)
     return answer(r, ctrl_rx(strcmp(v, "true") == 0));
 }
 
+/* POST /api/selftest : les verifications en JSON, [{radio,label,pass}], et le total. */
+struct st_acc { char *buf; size_t sz, n; int checks; };
+static void json_check(const char *radio, const char *label, bool pass, void *arg)
+{
+    struct st_acc *a = arg;
+    a->n += snprintf(a->buf + a->n, a->sz > a->n ? a->sz - a->n : 0, "%s{\"radio\":\"%s\",\"label\":\"%s\",\"pass\":%s}",
+                     a->checks ? "," : "", radio, label, pass ? "true" : "false");
+    a->checks++;
+}
+
+static esp_err_t h_selftest(httpd_req_t *r)
+{
+    static char buf[1536];
+    struct st_acc a = { buf, sizeof buf, 0, 0 };
+    a.n = snprintf(buf, sizeof buf, "{\"checks\":[");
+    int fail = ctrl_selftest(json_check, &a);
+    a.n += snprintf(buf + a.n, sizeof buf > a.n ? sizeof buf - a.n : 0, "],\"total\":%d,\"fail\":%d,\"ok\":%s}", a.checks, fail, fail ? "false" : "true");
+    httpd_resp_set_type(r, "application/json");
+    return httpd_resp_send(r, buf, a.n);
+}
+
 bool web_start(void)
 {
     if (!ap_start(BOARD_AP_SLUG)) return false;
@@ -98,6 +119,7 @@ bool web_start(void)
         { .uri = "/api/set",   .method = HTTP_POST, .handler = h_set },
         { .uri = "/api/tx",    .method = HTTP_POST, .handler = h_tx },
         { .uri = "/api/rx",    .method = HTTP_POST, .handler = h_rx },
+        { .uri = "/api/selftest", .method = HTTP_POST, .handler = h_selftest },
     };
     for (unsigned i = 0; i < sizeof routes / sizeof routes[0]; i++) httpd_register_uri_handler(s, &routes[i]);
     return true;

@@ -144,6 +144,10 @@ main{padding:14px 0 60px;display:grid;gap:16px;grid-template-columns:minmax(0,1f
         <p class="sub">Sur la radio choisie, avec le réglage en cours.</p>
         <button class="btn wide primary" id="tx">Émettre en continu</button>
         <button class="btn wide" id="rx" style="margin-top:10px">Écouter en continu</button>
+        <h3>Auto-test</h3>
+        <button class="btn wide" id="st">Lancer l'auto-test</button>
+        <div id="stres" class="hint" style="margin-top:8px"></div>
+        <p class="hint">Présence, transitions repos, émission, écoute, RSSI et refus hors déclaration, sur chaque radio. Sans instrument : la puissance, c'est l'analyseur.</p>
         <h3>Niveau reçu</h3>
         <div class="big" id="rssi">…</div>
         <p class="hint">Rafraîchi chaque seconde pendant l'écoute.</p>
@@ -205,6 +209,14 @@ $('#mgo').onclick=async()=>{await post('/api/set',{baud:+$('#baud').value,dev_hz
 $('#pgo').onclick=async()=>{await post('/api/set',{pa:$('#pa').value});load();};
 $('#tx').onclick=async()=>{await post('/api/tx',{on:!cur().tx});load();};
 $('#rx').onclick=async()=>{await post('/api/rx',{on:!cur().rx});load();};
+$('#st').onclick=async()=>{
+  const b=$('#st'),o=$('#stres');b.disabled=true;o.textContent='Auto-test en cours…';
+  try{const j=await (await fetch('/api/selftest',{method:'POST'})).json();
+    o.innerHTML=j.checks.map(c=>`<div style="color:${c.pass?'var(--ok)':'var(--danger)'}">${c.pass?'PASS':'FAIL'} · radio ${c.radio} · ${c.label}</div>`).join('')
+      +`<div style="margin-top:6px;font-weight:650;color:${j.ok?'var(--ok)':'var(--danger)'}">${j.total-j.fail}/${j.total} PASS</div>`;
+    say(j.ok?'Auto-test : tout passe.':'Auto-test : '+j.fail+' échec(s).',j.ok);}
+  catch(e){o.textContent='La carte ne répond pas';}
+  b.disabled=false;load();};
 load();
 setInterval(()=>{if(S&&cur().rx)load();},1000);
 </script>

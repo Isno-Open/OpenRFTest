@@ -28,8 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "esp_console.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
@@ -88,60 +86,20 @@ static int cmd_id(int argc, char **argv)
     return 0;
 }
 
-/* Attend que la MARCSTATE atteigne l'etat vise (calibration/PLL), au plus ms. */
-static uint8_t wait_marc(int r, uint8_t want, int ms)
+static void print_check(const char *radio, const char *label, bool pass, void *arg)
 {
-    uint8_t m = cc1101_marcstate(r);
-    for (int i = 0; i < ms / 5 && m != want; i++) {
-        vTaskDelay(pdMS_TO_TICKS(5));
-        m = cc1101_marcstate(r);
-    }
-    return m;
+    int *n = arg; (*n)++;
+    printf("[%s] radio %s : %s\n", pass ? "PASS" : "FAIL", radio, label);
 }
 
-/*
- * Auto-test fonctionnel, sans instrument : presence de la puce, transitions de
- * la machine d'etat (repos/TX/RX), lecture RSSI, et refus des reglages hors de
- * la declaration de carte. Ne mesure PAS la puissance conduite (analyseur).
- * Sort un verdict PASS/FAIL par verification et un total. Code retour = nb d'echecs.
- */
+/* L'auto-test commun (ctrl.c), imprime ligne a ligne. Code retour = nb d'echecs. */
 static int cmd_selftest(int argc, char **argv)
 {
     (void)argc; (void)argv;
-    int fail = 0, checks = 0;
-#define CHECK(cond, label) do { checks++; bool _c = (cond); \
-    printf("[%s] %s\n", _c ? "PASS" : "FAIL", label); if (!_c) fail++; } while (0)
-
-    for (int r = 0; r < ctrl_radio_count(); r++) {
-        const char *b = ctrl_band_name(r);
-        ctrl_select(b);
-        uint8_t p, v;
-        bool present = cc1101_present(r, &p, &v);
-        printf("--- radio %s : PARTNUM 0x%02X VERSION 0x%02X ---\n", b, p, v);
-        CHECK(present && v != 0x00, "CC1101 present (VERSION != 0x00)");
-
-        ctrl_tx(false);
-        CHECK(wait_marc(r, 0x01, 100) == 0x01, "repos -> MARCSTATE 0x01 (IDLE)");
-
-        ctrl_tx(true);
-        CHECK(wait_marc(r, 0x13, 200) == 0x13, "tx on -> MARCSTATE 0x13 (TX)");
-        ctrl_tx(false);
-
-        ctrl_rx(true);
-        uint8_t mrx = wait_marc(r, 0x0D, 200);
-        CHECK(mrx == 0x0D, "rx on -> MARCSTATE 0x0D (RX)");
-        int rssi = cc1101_rssi_dbm(r);
-        CHECK(rssi < 0 && rssi > -140, "RSSI lisible en RX");
-        printf("       RSSI %d dBm\n", rssi);
-        ctrl_rx(false);
-
-        CHECK(ctrl_set_freq_hz(100000u * 1000u) != NULL, "freq hors plage -> refusee");
-        CHECK(ctrl_set_power(30) != NULL, "power au-dela du declare -> refusee");
-    }
-    ctrl_select(ctrl_band_name(0));
+    int checks = 0;
+    int fail = ctrl_selftest(print_check, &checks);
     printf("SELFTEST : %d/%d PASS -> %s\n", checks - fail, checks, fail ? "ECHEC" : "OK");
     return fail;
-#undef CHECK
 }
 
 static void reg(const char *n, const char *h, esp_console_cmd_func_t f)
