@@ -30,6 +30,12 @@ const char *ctrl_tx(bool on);
 const char *ctrl_rx(bool on);
 
 const cc1101_state_t *ctrl_state(int radio);
+
+/* L'auto-test fonctionnel, sans instrument : presence, transitions repos/TX/RX,
+ * RSSI lisible, refus hors declaration. `cb` recoit chaque verification ; rend
+ * le nombre d'echecs. Commun a la console et a la page. */
+typedef void (*ctrl_check_cb_t)(const char *radio, const char *label, bool pass, void *arg);
+int ctrl_selftest(ctrl_check_cb_t cb, void *arg);
 /* L'etat complet en JSON, pour la page : radios, reglages, presence, RSSI. */
 size_t ctrl_state_json(char *out, size_t sz);
 
