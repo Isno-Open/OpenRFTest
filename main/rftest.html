@@ -73,9 +73,14 @@ main{padding:14px 0 60px;display:grid;gap:16px;grid-template-columns:minmax(0,1f
 .big{font-family:var(--mono);font-size:1.6rem;font-weight:650;letter-spacing:-.02em}
 .hint{font-size:.78rem;color:var(--muted)}
 .limits{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-160%);z-index:60;max-width:92vw;padding:12px 18px;border-radius:11px;font-size:.92rem;font-weight:650;box-shadow:var(--shadow);opacity:0;transition:transform .2s ease,opacity .2s ease;pointer-events:none;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{background:color-mix(in srgb,var(--ok) 20%,var(--surface));border-color:var(--ok)}
+.toast.bad{background:color-mix(in srgb,var(--danger) 20%,var(--surface));border-color:var(--danger)}
 </style>
 </head>
 <body>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="app">
   <header class="app-header">
     <div class="brand">
@@ -156,7 +161,12 @@ try{if(localStorage.getItem('theme')==='light')document.documentElement.dataset.
 $('#theme').onclick=()=>{const l=document.documentElement.dataset.theme==='light';document.documentElement.dataset.theme=l?'':'light';try{localStorage.setItem('theme',l?'dark':'light');}catch(e){}};
 
 function cur(){return S.radios.find(r=>r.band===S.current);}
-function say(t,ok){const m=$('#m');m.className='msg '+(ok?'ok':'bad');m.textContent=t;}
+let toastT=null;
+function say(t,ok){
+  const m=$('#m');m.className='msg '+(ok?'ok':'bad');m.textContent=t;
+  const to=$('#toast');to.textContent=(ok?'✓ ':'✕ ')+t;to.className='toast show '+(ok?'ok':'bad');
+  clearTimeout(toastT);toastT=setTimeout(()=>to.classList.remove('show'),ok?2600:5000);
+}
 
 async function post(url,body){
   try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
