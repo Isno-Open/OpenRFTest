@@ -93,6 +93,38 @@ docker run --rm -v "$PWD":/w -w /w -u $(id -u):$(id -g) -e HOME=/tmp espressif/i
 Mesuré le 2026-09-18 pour la Super : `0xdd650`, 907 Ko ; 30 % de libre dans un
 emplacement du launcher.
 
+## Premier essai réel : l'ATOM Lite et un module CC1101
+
+Le module se câble comme pour OpenProfalux, sur le connecteur du bas de l'ATOM Lite,
+par nom de signal : SCK G19, MISO G33, MOSI G23, CS G22, GDO0 G25, GDO2 G21, 3V3 et GND.
+Jamais 5 V sur le CC1101.
+
+1. Construire et flasher, l'ATOM branché en USB (le port est `/dev/ttyUSB0` ou
+   `/dev/ttyACM0`, `ls /dev/tty*` le dit) :
+
+   ```bash
+   docker run --rm -v "$PWD":/w -w /w -u $(id -u):$(id -g) -e HOME=/tmp \
+     --device /dev/ttyUSB0 --group-add dialout espressif/idf:v6.1 \
+     idf.py -B build/atom -DSDKCONFIG=build/atom/sdkconfig -DIDF_TARGET=esp32 -DBOARD=m5-atom-lite \
+     -p /dev/ttyUSB0 flash monitor
+   ```
+
+   Le moniteur affiche le nom du point d'accès et son mot de passe, puis
+   `OpenRFTest sur M5Stack ATOM Lite + CC1101 : 1 radio(s) declaree(s)`, et le résultat
+   de `id`. Sortir du moniteur : `Ctrl+]`.
+2. `id` doit dire `radio 868 : PARTNUM 0x00 VERSION 0x14 : CC1101 present`. Sinon, c'est
+   le câblage : relire les fils par nom de signal, `CS` sur `CSN`.
+3. `tx on` : la radio émet une porteuse à 868,35 MHz, à 0 dBm de la table. Sur
+   l'analyseur, une raie fine à cette fréquence. `status` montre `MARCSTATE 0x13`, l'état
+   TX de la puce.
+4. `power 10`, puis `pa 0xC5` par exemple : c'est ainsi que se calent les valeurs PATABLE
+   intermédiaires, en lisant la puissance à l'analyseur. Noter la correspondance mesurée
+   dans `boards/`, pas dans le code.
+5. `mod ook`, `mod 2fsk` avec `rate 38400` et `dev 19040` : la raie s'élargit selon la
+   modulation. `tx off` pour arrêter.
+6. Sur le téléphone, rejoindre `OpenRFTest-Atom-xxxx` avec le mot de passe affiché, puis
+   `http://192.168.4.1/` : la page fait la même chose que la console.
+
 ## Licence
 
 GPL-3.0-or-later. Projet [Isno-Open](https://github.com/Isno-Open).
