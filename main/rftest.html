@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1424">
+<title>OpenRFTest</title>
+<style>
+/* Theme isno.fr, identique a OpenProfalux et au launcher : mode nuit par defaut. */
+:root{
+  --bg:#0a1424; --surface:#101f38; --surface-2:#0d1b30; --border:#1d3457;
+  --text:#e8eef8; --muted:#8598ba;
+  --accent:#2e86ff; --accent-fg:#ffffff; --accent-weak:rgba(46,134,255,.14); --accent-line:rgba(46,134,255,.34);
+  --ok:#27c93f; --warn:#ffb03a; --danger:#ff5f56;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.45);
+  --radius:13px; --radius-sm:9px;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#f1f5fb; --surface:#ffffff; --surface-2:#e9eff8; --border:#d3ddee;
+  --text:#0a1424; --muted:#566a8f;
+  --accent:#1560bd; --accent-fg:#ffffff; --accent-weak:rgba(21,96,189,.10); --accent-line:rgba(21,96,189,.30);
+  --ok:#2e9e5b; --warn:#8a6d0a; --danger:#d64545;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 3px 10px rgba(20,30,45,.05);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+h2{font-size:1.02rem}
+h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:16px 0 9px}
+code{font-family:var(--mono);font-size:.86em}
+[hidden]{display:none!important}
+.app{max-width:900px;margin:0 auto;padding:0 clamp(14px,4vw,22px)}
+.app-header{display:flex;align-items:center;gap:14px;padding:20px 0 14px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:11px;margin-right:auto;min-width:0}
+.logo{width:34px;height:34px;color:var(--accent);flex:none}
+.brand h1{font-size:1.12rem;font-weight:700;letter-spacing:-.02em}
+.brand .tag{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.icon-btn{width:36px;height:36px;flex:none;display:grid;place-items:center;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;cursor:pointer;font-size:1rem}
+main{padding:14px 0 60px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:620px){.grid.two{display:grid;gap:16px;grid-template-columns:1fr 1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);min-width:0}
+.card>h2{margin-bottom:3px}
+.card .sub{color:var(--muted);font-size:.85rem;margin:2px 0 14px}
+.statline{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--surface-2);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:10px;font-size:.88rem;flex-wrap:wrap}
+.statline .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--muted)}
+.statline.ok .dot{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
+.statline.tx .dot{background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 25%,transparent)}
+.statline.rx .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+.statline.bad .dot{background:var(--danger)}
+.statline b{font-weight:650}
+.statline .r{margin-left:auto;color:var(--muted);font-family:var(--mono);font-size:.82rem}
+.field{display:grid;gap:5px;margin-bottom:12px}
+.field label{font-size:.78rem;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.field input{width:100%;padding:9px 11px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font:inherit;font-size:.92rem}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+.field .help{font-size:.74rem;color:var(--muted);line-height:1.45}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg .btn{padding:7px 12px;font-size:.84rem}
+.seg .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn{appearance:none;font:inherit;font-weight:600;font-size:.9rem;padding:9px 15px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.14s}
+.btn:hover{border-color:var(--accent-line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row .field{flex:1;min-width:120px;margin:0}
+.msg{font-size:.82rem;margin-top:9px;min-height:1.2em}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--danger)}
+.big{font-family:var(--mono);font-size:1.6rem;font-weight:650;letter-spacing:-.02em}
+.hint{font-size:.78rem;color:var(--muted)}
+.limits{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="3" fill="currentColor"/>
+        <path d="M9.5 9.5a9 9 0 0 0 0 13M22.5 9.5a9 9 0 0 1 0 13M6 6a14 14 0 0 0 0 20M26 6a14 14 0 0 1 0 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <div><h1>OpenRFTest</h1><div class="tag">Banc et laboratoire · <span id="cur">…</span></div></div>
+    </div>
+    <button class="icon-btn" id="theme" title="Thème clair / sombre">◐</button>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Les radios</h2>
+      <p class="sub">Ce que la carte déclare, et ce que les puces répondent. Un seul émetteur actif à la fois.</p>
+      <div id="radios"></div>
+    </section>
+
+    <div class="grid two">
+      <section class="card">
+        <h2>Réglage</h2>
+        <p class="sub">Tout est vérifié contre la déclaration de carte : hors plage ou au-delà de la puissance déclarée, la carte refuse.</p>
+        <h3>Radio</h3>
+        <div class="seg" id="segRadio"></div>
+        <h3>Fréquence</h3>
+        <div class="seg" id="segChan">
+          <button class="btn" data-chan="low">bas de bande</button>
+          <button class="btn" data-chan="mid">porteuse</button>
+          <button class="btn" data-chan="high">haut de bande</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><label for="f">kHz</label><input id="f" inputmode="numeric"></div>
+          <button class="btn" id="fgo" style="margin-top:20px">Appliquer</button>
+        </div>
+        <div class="limits" id="lim"></div>
+        <h3>Modulation</h3>
+        <div class="seg" id="segMod">
+          <button class="btn" data-mod="cw">porteuse pure</button>
+          <button class="btn" data-mod="ook">OOK</button>
+          <button class="btn" data-mod="2fsk">2-FSK</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><label for="baud">débit, bauds</label><input id="baud" inputmode="numeric"></div>
+          <div class="field"><label for="dev">déviation, Hz</label><input id="dev" inputmode="numeric"></div>
+          <button class="btn" id="mgo" style="margin-top:20px">Appliquer</button>
+        </div>
+        <p class="hint">io-homecontrol : 38400 bauds, 19040 Hz. OpenProfalux : 1200 bauds, 5157 Hz.</p>
+        <h3>Puissance</h3>
+        <div class="seg" id="segPow"></div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><label for="pa">PATABLE brute, 0xNN</label><input id="pa" placeholder="0xC2"></div>
+          <button class="btn" id="pgo" style="margin-top:20px">Appliquer</button>
+        </div>
+        <p class="hint">Les 8 et 9 dBm ne sont pas dans la table de la fiche technique : une valeur brute, et la puissance se mesure au banc.</p>
+        <div class="msg" id="m"></div>
+      </section>
+
+      <section class="card">
+        <h2>Émission et écoute</h2>
+        <p class="sub">Sur la radio choisie, avec le réglage en cours.</p>
+        <button class="btn wide primary" id="tx">Émettre en continu</button>
+        <button class="btn wide" id="rx" style="margin-top:10px">Écouter en continu</button>
+        <h3>Niveau reçu</h3>
+        <div class="big" id="rssi">…</div>
+        <p class="hint">Rafraîchi chaque seconde pendant l'écoute.</p>
+        <h3>Console</h3>
+        <p class="hint">Les mêmes commandes existent sur le port série de l'USB-C : <code>radio</code>, <code>freq</code>, <code>chan</code>, <code>mod</code>, <code>rate</code>, <code>dev</code>, <code>power</code>, <code>pa</code>, <code>tx</code>, <code>rx</code>, <code>rssi</code>, <code>status</code>, <code>id</code>.</p>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const POW=[-30,-20,-15,-10,0,5,7,10];
+let S=null;
+try{if(localStorage.getItem('theme')==='light')document.documentElement.dataset.theme='light';}catch(e){}
+$('#theme').onclick=()=>{const l=document.documentElement.dataset.theme==='light';document.documentElement.dataset.theme=l?'':'light';try{localStorage.setItem('theme',l?'dark':'light');}catch(e){}};
+
+function cur(){return S.radios.find(r=>r.band===S.current);}
+function say(t,ok){const m=$('#m');m.className='msg '+(ok?'ok':'bad');m.textContent=t;}
+
+async function post(url,body){
+  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json(); say(j.ok?'Appliqué.':j.message,j.ok); return j.ok;}
+  catch(e){say('La carte ne répond pas',false);return false;}
+}
+async function load(){
+  try{S=await (await fetch('/api/state')).json();render();}
+  catch(e){$('#radios').innerHTML='<div class="statline bad"><span class="dot"></span><b>La carte ne répond pas</b></div>';}
+}
+function render(){
+  $('#cur').textContent='radio '+S.current;
+  $('#radios').innerHTML=S.radios.map(r=>{
+    const st=r.tx?'tx':r.rx?'rx':r.present?'ok':'bad';
+    const what=r.tx?'ÉMET':r.rx?'ÉCOUTE':r.present?'repos':'pas de réponse';
+    return `<div class="statline ${st}"><span class="dot"></span><b>Radio ${r.band} MHz</b> ${what}
+      <span>${r.freq_khz} kHz · ${r.mod} · pa 0x${r.pa.toString(16).padStart(2,'0').toUpperCase()}</span>
+      <span class="r">${r.present?'CC1101 v'+r.version:'PARTNUM '+r.partnum+' VERSION '+r.version}</span></div>`;}).join('');
+  const c=cur();
+  $('#segRadio').innerHTML=S.radios.map(r=>`<button class="btn ${r.band===S.current?'on':''}" data-radio="${r.band}">${r.band} MHz</button>`).join('');
+  document.querySelectorAll('#segRadio .btn').forEach(b=>b.onclick=async()=>{await post('/api/set',{radio:b.dataset.radio});load();});
+  document.querySelectorAll('#segChan .btn').forEach(b=>b.onclick=async()=>{await post('/api/set',{chan:b.dataset.chan});load();});
+  document.querySelectorAll('#segMod .btn').forEach(b=>{b.classList.toggle('on',b.dataset.mod===c.mod);b.onclick=async()=>{await post('/api/set',{mod:b.dataset.mod});load();};});
+  $('#segPow').innerHTML=POW.map(p=>`<button class="btn ${c.dbm===p?'on':''}" data-dbm="${p}" ${p>c.max_dbm?'disabled':''}>${p>0?'+':''}${p} dBm</button>`).join('');
+  document.querySelectorAll('#segPow .btn').forEach(b=>b.onclick=async()=>{await post('/api/set',{dbm:+b.dataset.dbm});load();});
+  if(document.activeElement!==$('#f'))$('#f').value=c.freq_khz;
+  if(document.activeElement!==$('#baud'))$('#baud').value=c.baud;
+  if(document.activeElement!==$('#dev'))$('#dev').value=c.dev_hz;
+  $('#lim').textContent=`plage déclarée ${c.low_khz} à ${c.high_khz} kHz · puissance déclarée ${c.max_dbm} dBm`;
+  const tx=$('#tx');tx.textContent=c.tx?'Arrêter l’émission':'Émettre en continu';tx.className='btn wide '+(c.tx?'danger':'primary');
+  const rx=$('#rx');rx.textContent=c.rx?'Arrêter l’écoute':'Écouter en continu';rx.className='btn wide '+(c.rx?'danger':'');
+  $('#rssi').textContent=c.rx?c.rssi+' dBm':'…';
+}
+$('#fgo').onclick=async()=>{await post('/api/set',{freq_khz:+$('#f').value});load();};
+$('#mgo').onclick=async()=>{await post('/api/set',{baud:+$('#baud').value,dev_hz:+$('#dev').value});load();};
+$('#pgo').onclick=async()=>{await post('/api/set',{pa:$('#pa').value});load();};
+$('#tx').onclick=async()=>{await post('/api/tx',{on:!cur().tx});load();};
+$('#rx').onclick=async()=>{await post('/api/rx',{on:!cur().rx});load();};
+load();
+setInterval(()=>{if(S&&cur().rx)load();},1000);
+</script>
+</body>
+</html>

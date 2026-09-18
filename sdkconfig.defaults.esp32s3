@@ -1,0 +1,6 @@
+# ISNO Super : console sur l'USB natif (USB-C, GPIO 19/20), 8 Mo, deux
+# emplacements OTA comme le launcher (l'image s'installe dans l'un d'eux).
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
+CONFIG_PARTITION_TABLE_TWO_OTA=y
