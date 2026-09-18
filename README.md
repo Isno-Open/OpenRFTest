@@ -21,6 +21,7 @@ un module CC1101 en Dupont, le banc d'[OpenProfalux](https://github.com/Isno-Ope
 | `tx on\|off` | émission continue, données aléatoires (le mode « continuous TX » de SmartRF Studio) |
 | `rx on\|off`, `rssi` | écoute continue et niveau reçu |
 | `status`, `id` | état des radios ; présence des CC1101 par leurs registres d'identité |
+| `selftest` | auto-test fonctionnel sans instrument : présence, transitions repos/TX/RX, RSSI, refus hors déclaration ; verdict PASS/FAIL |
 
 Un seul émetteur actif à la fois. La LED, quand la carte en a une, est allumée pendant
 l'émission.
@@ -112,8 +113,9 @@ Jamais 5 V sur le CC1101.
    Le moniteur affiche le nom du point d'accès et son mot de passe, puis
    `OpenRFTest sur M5Stack ATOM Lite + CC1101 : 1 radio(s) declaree(s)`, et le résultat
    de `id`. Sortir du moniteur : `Ctrl+]`.
-2. `id` doit dire `radio 868 : PARTNUM 0x00 VERSION 0x14 : CC1101 present`. Sinon, c'est
-   le câblage : relire les fils par nom de signal, `CS` sur `CSN`.
+2. `id` doit dire `radio 868 : PARTNUM 0x00 VERSION 0x04 : CC1101 present` (`VERSION`
+   vaut `0x04` ou `0x14` selon le lot de la puce ; seul `0x00` = puce muette). Sinon,
+   c'est le câblage : relire les fils par nom de signal, `CS` sur `CSN`.
 3. `tx on` : la radio émet une porteuse à 868,35 MHz, à 0 dBm de la table. Sur
    l'analyseur, une raie fine à cette fréquence. `status` montre `MARCSTATE 0x13`, l'état
    TX de la puce.
@@ -124,6 +126,10 @@ Jamais 5 V sur le CC1101.
    modulation. `tx off` pour arrêter.
 6. Sur le téléphone, rejoindre `OpenRFTest-Atom-xxxx` avec le mot de passe affiché, puis
    `http://192.168.4.1/` : la page fait la même chose que la console.
+
+Raccourci : `selftest` enchaîne présence, transitions repos/TX/RX, lecture RSSI et refus
+hors déclaration, et sort un verdict `PASS/FAIL` unique. Il ne mesure pas la puissance
+conduite : ça, c'est l'analyseur, aux points 4 et suivants.
 
 ## Licence
 
