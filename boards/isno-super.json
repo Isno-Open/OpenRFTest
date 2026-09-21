@@ -6,6 +6,8 @@
   ],
   "id": "isno-super",
   "name": "ISNO Super",
+  "ap_slug": "Super",
+  "registry_model": "isno-super",
   "internal_dir": "boards/super-qwiic",
   "mcu": "esp32s3",
   "pio_board": "esp32-s3-devkitc-1",
@@ -72,10 +74,18 @@
     "led": 26,
     "led_active_high": true
   },
-  "board_id": {
-    "id0": 14,
-    "id1": 47,
-    "reserve": 48
+  "_spare": [
+    "Broches du module SANS reseau sur la carte : GPIO14 (U1.18), GPIO47 (U1.27), GPIO48",
+    "(U1.30). Elles portaient les straps d'identification jusqu'au 2026-09-21 ; l'identite",
+    "vit maintenant dans la partition `identity`, ecrite au provisionnement. Elles restent",
+    "declarees parce que le temoin de rang III (embedded/witness/main/witness.c) les",
+    "pilote : ce sont les seules broches presentes sur TOUTE la gamme que rien d'autre",
+    "n'utilise."
+  ],
+  "spare": {
+    "a": 14,
+    "b": 47,
+    "c": 48
   },
   "_region": [
     "La region de vente FIXE ce que la carte a le droit d'emettre : les plages, la",
@@ -104,6 +114,5 @@
       "carrier_khz": 868350,
       "max_dbm": 10
     }
-  ],
-  "ap_slug": "Super"
+  ]
 }

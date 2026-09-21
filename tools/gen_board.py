@@ -12,7 +12,6 @@ import json, sys
 
 def header(d):
     ui = d.get("ui", {})
-    bid = d.get("board_id", {})
     radios = d["radios"]
     spi = {(r["pins"]["sck"], r["pins"]["miso"], r["pins"]["mosi"]) for r in radios}
     if len(spi) != 1:
@@ -32,8 +31,6 @@ def header(d):
         "#define BOARD_PIN_BUTTON    %d" % ui.get("button", -1),
         "#define BOARD_PIN_LED       %d" % ui.get("led", -1),
         "#define BOARD_LED_ACTIVE_HIGH %d" % (1 if ui.get("led_active_high", True) else 0),
-        "#define BOARD_PIN_ID0       %d" % bid.get("id0", -1),
-        "#define BOARD_PIN_ID1       %d" % bid.get("id1", -1),
         "#define BOARD_PIN_SPI_SCK   %d" % radios[0]["pins"]["sck"],
         "#define BOARD_PIN_SPI_MISO  %d" % radios[0]["pins"]["miso"],
         "#define BOARD_PIN_SPI_MOSI  %d" % radios[0]["pins"]["mosi"],
