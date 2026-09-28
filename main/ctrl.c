@@ -24,7 +24,31 @@ static SemaphoreHandle_t s_lock;
 
 static rf_band_t band_of(int r) { return (rf_band_t){ RADIOS[r].low_khz, RADIOS[r].high_khz, RADIOS[r].max_dbm }; }
 static int band_mhz(int r) { return atoi(RADIOS[r].band); }
-static void led(bool on) { if (BOARD_PIN_LED >= 0) gpio_set_level(BOARD_PIN_LED, on == (bool)BOARD_LED_ACTIVE_HIGH); }
+/* Temoin lumineux : fixe allume au repos (preuve de vie), clignotant des qu'une
+ * radio emet ou ecoute, eteint seulement si la carte n'a pas demarre. Une tache
+ * dediee porte le clignotement ; les reglages ne font que poser l'etat actif. */
+static volatile bool s_radio_active = false;
+
+static void led_raw(bool on) { if (BOARD_PIN_LED >= 0) gpio_set_level(BOARD_PIN_LED, on == (bool)BOARD_LED_ACTIVE_HIGH); }
+
+/* Actif = au moins une radio en TX ou RX. Recalcule a chaque changement d'etat. */
+static void led_refresh(void)
+{
+    bool active = false;
+    for (int r = 0; r < BOARD_RADIO_COUNT; r++) if (s_st[r].tx || s_st[r].rx) active = true;
+    s_radio_active = active;
+}
+
+static void led_task(void *arg)
+{
+    (void)arg;
+    bool phase = false;
+    for (;;) {
+        if (s_radio_active) { phase = !phase; led_raw(phase); }
+        else                { phase = false;  led_raw(true);  }
+        vTaskDelay(pdMS_TO_TICKS(120));
+    }
+}
 
 static const char *refuse(const char *fmt, ...)
 {
@@ -44,8 +68,11 @@ static const char *reapply(int r)
 void ctrl_init(void)
 {
     s_lock = xSemaphoreCreateRecursiveMutex();
-    if (BOARD_PIN_LED >= 0) gpio_set_direction(BOARD_PIN_LED, GPIO_MODE_OUTPUT);
-    led(false);
+    if (BOARD_PIN_LED >= 0) {
+        gpio_set_direction(BOARD_PIN_LED, GPIO_MODE_OUTPUT);
+        led_raw(true);   /* allumee des l'init : la carte vit, radio au repos */
+        xTaskCreate(led_task, "led", 2048, NULL, 1, NULL);
+    }
     cc1101_setup();
     for (int r = 0; r < BOARD_RADIO_COUNT; r++) {
         uint8_t pa = 0x00;
@@ -135,7 +162,7 @@ static const char *ctrl_tx_l(bool on)
     s_st[s_cur].tx = on;
     if (on) { if (!cc1101_apply(s_cur, &s_st[s_cur])) { s_st[s_cur].tx = false; return refuse("emission impossible"); } }
     else cc1101_idle(s_cur);
-    led(on);
+    led_refresh();
     return NULL;
 }
 
@@ -144,7 +171,7 @@ static const char *ctrl_rx_l(bool on)
     s_st[s_cur].rx = on; s_st[s_cur].tx = false;
     if (on) { if (!cc1101_apply(s_cur, &s_st[s_cur])) { s_st[s_cur].rx = false; return refuse("ecoute impossible"); } }
     else cc1101_idle(s_cur);
-    led(false);
+    led_refresh();
     return NULL;
 }
 
